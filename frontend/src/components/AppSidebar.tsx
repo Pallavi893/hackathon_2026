@@ -48,6 +48,7 @@ const publicItems: NavItem[] = [
 const studentItems: NavItem[] = [
   { title: "Dashboard", url: "/student/dashboard", icon: LayoutDashboard },
   { title: "Browse Quizzes", url: "/student/quizzes", icon: Search },
+  { title: "Study Notes", url: "/student/notes", icon: BookOpen },
   { title: "My Results", url: "/student/results", icon: Trophy },
   { title: "My Profile", url: "/student/profile", icon: Users },
 ];
@@ -56,6 +57,7 @@ const studentItems: NavItem[] = [
 const facultyItems: NavItem[] = [
   { title: "Dashboard", url: "/faculty/dashboard", icon: LayoutDashboard },
   { title: "My Quizzes", url: "/faculty/quizzes", icon: ListChecks },
+  { title: "My Notes", url: "/faculty/notes", icon: FileText },
   { title: "Quiz Results", url: "/faculty/quiz-results", icon: ClipboardList },
 ];
 

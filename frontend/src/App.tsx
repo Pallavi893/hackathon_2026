@@ -38,9 +38,12 @@ import FacultyQuizResults from "./pages/faculty/QuizResults";
 import FacultyMyQuizzes from "./pages/faculty/MyQuizzes";
 import FacultyCreateQuiz from "./pages/faculty/CreateQuiz";
 import FacultyEditQuiz from "./pages/faculty/EditQuiz";
+import FacultyMyNotes from "./pages/faculty/MyNotes";
+import FacultyCreateEditNote from "./pages/faculty/CreateEditNote";
 import AdminDashboard from "./pages/admin/Dashboard";
 import AdminUsers from "./pages/admin/Users";
 import AdminPendingFaculty from "./pages/admin/PendingFaculty";
+import StudentBrowseNotes from "./pages/student/BrowseNotes";
 
 const queryClient = new QueryClient();
 
@@ -146,6 +149,14 @@ const App = () => (
                     </StudentRoute>
                   }
                 />
+                <Route
+                  path="/student/notes"
+                  element={
+                    <StudentRoute>
+                      <StudentBrowseNotes />
+                    </StudentRoute>
+                  }
+                />
                 
                 {/* Faculty routes */}
                 <Route
@@ -193,6 +204,30 @@ const App = () => (
                   element={
                     <FacultyRoute>
                       <FacultyEditQuiz />
+                    </FacultyRoute>
+                  }
+                />
+                <Route
+                  path="/faculty/notes"
+                  element={
+                    <FacultyRoute>
+                      <FacultyMyNotes />
+                    </FacultyRoute>
+                  }
+                />
+                <Route
+                  path="/faculty/create-note"
+                  element={
+                    <FacultyRoute>
+                      <FacultyCreateEditNote />
+                    </FacultyRoute>
+                  }
+                />
+                <Route
+                  path="/faculty/edit-note/:noteId"
+                  element={
+                    <FacultyRoute>
+                      <FacultyCreateEditNote />
                     </FacultyRoute>
                   }
                 />

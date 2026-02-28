@@ -293,5 +293,46 @@ export const generateApi = {
     api.post<ApiResponse>("/api/generate/quiz", { text, settings }),
 };
 
+// ==================== NOTES API ====================
+export const notesApi = {
+  // Get published notes (student browse)
+  getPublishedNotes: (params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    subject?: string;
+    topic?: string;
+  }) => api.get<ApiResponse>("/api/notes", { params }),
+
+  // Get subjects for filter
+  getSubjects: () => api.get<ApiResponse>("/api/notes/subjects"),
+
+  // Get faculty's own notes
+  getMyNotes: (params?: { page?: number; limit?: number; search?: string }) =>
+    api.get<ApiResponse>("/api/notes/my", { params }),
+
+  // Get single note
+  getNote: (id: string) => api.get<ApiResponse>(`/api/notes/${id}`),
+
+  // Create note (with optional file)
+  createNote: (data: FormData) =>
+    api.post<ApiResponse>("/api/notes", data, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
+
+  // Update note (with optional file)
+  updateNote: (id: string, data: FormData) =>
+    api.put<ApiResponse>(`/api/notes/${id}`, data, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
+
+  // Delete note
+  deleteNote: (id: string) => api.delete<ApiResponse>(`/api/notes/${id}`),
+
+  // Toggle publish
+  togglePublish: (id: string) =>
+    api.patch<ApiResponse>(`/api/notes/${id}/publish`),
+};
+
 // Export default instance for custom requests
 export default api;

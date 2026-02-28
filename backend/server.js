@@ -25,6 +25,7 @@ const {
   adminRoutes,
   leaderboardRoutes,
   profileRoutes,
+  notesRoutes,
 } = require("./routes");
 
 // Middleware
@@ -103,6 +104,7 @@ app.use("/api/analytics", analyticsRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/leaderboard", leaderboardRoutes);
 app.use("/api/users", profileRoutes);
+app.use("/api/notes", notesRoutes);
 
 // Root endpoint
 app.get("/", (req, res) => {

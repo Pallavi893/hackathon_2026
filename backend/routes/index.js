@@ -7,6 +7,7 @@ const analyticsRoutes = require("./analyticsRoutes");
 const adminRoutes = require("./adminRoutes");
 const leaderboardRoutes = require("./leaderboardRoutes");
 const profileRoutes = require("./profileRoutes");
+const notesRoutes = require("./notesRoutes");
 
 module.exports = {
   authRoutes,
@@ -18,4 +19,5 @@ module.exports = {
   adminRoutes,
   leaderboardRoutes,
   profileRoutes,
+  notesRoutes,
 };
