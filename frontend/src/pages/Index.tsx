@@ -22,18 +22,17 @@ const Index = () => {
 
     setIsGenerating(true);
     try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      if (!supabaseUrl) {
-        toast.error("Backend not configured. Please enable Lovable Cloud.");
+      const serverUri = import.meta.env.VITE_SERVER_URI;
+      if (!serverUri) {
+        toast.error("Backend not configured. Please set VITE_SERVER_URI.");
         setIsGenerating(false);
         return;
       }
 
-      const resp = await fetch(`${supabaseUrl}/functions/v1/generate-quiz`, {
+      const resp = await fetch(`${serverUri}/api/generate/quiz`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
         body: JSON.stringify({ text: inputText, settings }),
       });
@@ -48,10 +47,12 @@ const Index = () => {
       }
       if (!resp.ok) throw new Error("Failed to generate quiz");
 
-      const data = await resp.json();
-      setQuestions(data.questions || []);
-      setTopics(data.topics || []);
-      toast.success(`Generated ${(data.questions || []).length} questions!`);
+      const response = await resp.json();
+      const questions = response.data?.questions || [];
+      const topics = response.data?.topics || [];
+      setQuestions(questions);
+      setTopics(topics);
+      toast.success(`Generated ${questions.length} questions!`);
       navigate("/preview");
     } catch (err) {
       console.error(err);

@@ -1,34 +1,64 @@
 import { useCallback, useRef, useState } from "react";
-import { Upload, FileText, X } from "lucide-react";
+import { Upload, FileText, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useQuiz } from "@/context/QuizContext";
 import { toast } from "sonner";
 
+const SERVER_URI = import.meta.env.VITE_SERVER_URI || "http://localhost:3000";
+
 export function FileUpload() {
   const { inputText, setInputText } = useQuiz();
   const [isDragging, setIsDragging] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFile = useCallback(
-    (file: File) => {
-      if (!file.name.endsWith(".txt")) {
-        toast.error("Currently only .txt files are supported. PDF/DOCX support coming soon!");
+    async (file: File) => {
+      const extension = file.name.split(".").pop()?.toLowerCase();
+      
+      if (!["txt", "pdf"].includes(extension || "")) {
+        toast.error("Please upload a .txt or .pdf file");
         return;
       }
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const text = e.target?.result as string;
-        const cleaned = text
-          .replace(/\f/g, "\n")
-          .replace(/\n{3,}/g, "\n\n")
-          .trim();
-        setInputText(cleaned);
+
+      setIsProcessing(true);
+
+      try {
+        // Upload to backend for processing
+        const formData = new FormData();
+        formData.append("file", file);
+
+        toast.info("Uploading and processing file...");
+
+        const response = await fetch(`${SERVER_URI}/api/upload/pdf`, {
+          method: "POST",
+          body: formData,
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.message || "Failed to process file");
+        }
+
+        const extractedText = result.data.text;
+
+        if (extractedText.length < 50) {
+          toast.error("The file doesn't contain enough text. Please upload a file with more content.");
+          return;
+        }
+
+        setInputText(extractedText);
         setFileName(file.name);
-        toast.success(`Loaded: ${file.name}`);
-      };
-      reader.readAsText(file);
+        toast.success(`Loaded: ${file.name} (${result.data.characterCount} characters)`);
+      } catch (error) {
+        console.error("Error processing file:", error);
+        toast.error(error instanceof Error ? error.message : "Failed to process file. Please try again.");
+      } finally {
+        setIsProcessing(false);
+      }
     },
     [setInputText]
   );
@@ -48,25 +78,34 @@ export function FileUpload() {
       <div
         className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer ${
           isDragging ? "border-primary bg-accent" : "border-border hover:border-primary/50"
-        }`}
+        } ${isProcessing ? "pointer-events-none opacity-60" : ""}`}
         onDragOver={(e) => {
           e.preventDefault();
           setIsDragging(true);
         }}
         onDragLeave={() => setIsDragging(false)}
         onDrop={handleDrop}
-        onClick={() => fileInputRef.current?.click()}
+        onClick={() => !isProcessing && fileInputRef.current?.click()}
       >
-        <Upload className="mx-auto h-10 w-10 text-muted-foreground mb-3" />
-        <p className="text-sm text-muted-foreground">
-          Drag & drop a .txt file or{" "}
-          <span className="text-primary font-medium">browse</span>
-        </p>
-        <p className="text-xs text-muted-foreground mt-1">PDF & DOCX support coming soon</p>
+        {isProcessing ? (
+          <>
+            <Loader2 className="mx-auto h-10 w-10 text-primary mb-3 animate-spin" />
+            <p className="text-sm text-muted-foreground">Processing file...</p>
+          </>
+        ) : (
+          <>
+            <Upload className="mx-auto h-10 w-10 text-muted-foreground mb-3" />
+            <p className="text-sm text-muted-foreground">
+              Drag & drop a file or{" "}
+              <span className="text-primary font-medium">browse</span>
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">Supports PDF and TXT files</p>
+          </>
+        )}
         <input
           ref={fileInputRef}
           type="file"
-          accept=".txt"
+          accept=".txt,.pdf"
           className="hidden"
           onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
         />
