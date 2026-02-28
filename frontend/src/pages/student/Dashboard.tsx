@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { analyticsApi, quizApi, resultsApi } from "@/services/api";
+import { analyticsApi, quizApi, resultsApi, profileApi } from "@/services/api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +21,8 @@ import {
   Search,
 } from "lucide-react";
 import { toast } from "sonner";
+import XPCard from "@/components/gamification/XPCard";
+import LeaderboardPreview from "@/components/gamification/LeaderboardPreview";
 
 interface AnalyticsData {
   overview: {
@@ -70,28 +72,47 @@ interface WeakTopic {
   attemptCount: number;
 }
 
+interface GamificationData {
+  xp: number;
+  level: number;
+  xpProgress: {
+    currentXp: number;
+    currentLevel: number;
+    xpInCurrentLevel: number;
+    xpNeededForNextLevel: number;
+    progressPercent: number;
+    xpToNextLevel: number;
+  };
+}
+
 const StudentDashboard = () => {
   const { user } = useAuth();
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [recentResults, setRecentResults] = useState<Result[]>([]);
   const [weakTopics, setWeakTopics] = useState<WeakTopic[]>([]);
+  const [gamification, setGamification] = useState<GamificationData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const [analyticsRes, quizzesRes, resultsRes, weakTopicsRes] = await Promise.all([
+        const [analyticsRes, quizzesRes, resultsRes, weakTopicsRes, profileRes] = await Promise.all([
           analyticsApi.getMyAnalytics().catch(() => ({ data: { data: null } })),
           quizApi.getQuizzes({ limit: 6, isPublic: true, isPublished: true }).catch(() => ({ data: { data: [] } })),
           resultsApi.getMyResults({ limit: 5 }).catch(() => ({ data: { data: [] } })),
           analyticsApi.getWeakTopics().catch(() => ({ data: { data: [] } })),
+          profileApi.getMyProfile().catch(() => ({ data: { data: null } })),
         ]);
 
         setAnalytics(analyticsRes.data?.data as AnalyticsData || null);
         setQuizzes((quizzesRes.data?.data as Quiz[]) || []);
         setRecentResults((resultsRes.data?.data as Result[]) || []);
         setWeakTopics((weakTopicsRes.data?.data as WeakTopic[]) || []);
+        if (profileRes.data?.data) {
+          const p = profileRes.data.data as any;
+          setGamification({ xp: p.xp, level: p.level, xpProgress: p.xpProgress });
+        }
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
         toast.error("Failed to load dashboard data");
@@ -141,6 +162,18 @@ const StudentDashboard = () => {
           </Button>
         </Link>
       </div>
+
+      {/* Gamification Row */}
+      {gamification && (
+        <div className="grid gap-4 md:grid-cols-2">
+          <XPCard
+            xp={gamification.xp}
+            level={gamification.level}
+            xpProgress={gamification.xpProgress}
+          />
+          <LeaderboardPreview limit={5} currentUserId={user?._id} />
+        </div>
+      )}
 
       {/* Stats Overview */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

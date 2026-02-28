@@ -272,7 +272,15 @@ const updateQuestions = asyncHandler(async (req, res) => {
  * @access  Private
  */
 const submitQuizAttempt = asyncHandler(async (req, res) => {
-  const { answers, totalTimeTaken } = req.body;
+  const { answers, totalTimeTaken, timeTaken } = req.body;
+
+  // Validate required fields
+  if (!answers || !Array.isArray(answers)) {
+    throw new ApiError("Answers array is required", 400);
+  }
+
+  // Accept both timeTaken and totalTimeTaken for backward compatibility
+  const finalTimeTaken = totalTimeTaken ?? timeTaken ?? 0;
 
   const quiz = await Quiz.findById(req.params.id);
 
@@ -280,14 +288,29 @@ const submitQuizAttempt = asyncHandler(async (req, res) => {
     throw new ApiError("Quiz not found", 404);
   }
 
-  // Calculate score
+  // Calculate score - handle questionId as either ObjectId or string index
   let score = 0;
-  const processedAnswers = answers.map((answer) => {
-    const question = quiz.questions.id(answer.questionId);
+  const processedAnswers = answers.map((answer, index) => {
+    // Try to find question by _id first, then by index if questionId is a string number
+    let question = quiz.questions.id(answer.questionId);
+    
+    // If not found by ObjectId, try to match by index or fallback
+    if (!question) {
+      const questionIndex = parseInt(answer.questionId, 10);
+      if (!isNaN(questionIndex) && questionIndex >= 0 && questionIndex < quiz.questions.length) {
+        question = quiz.questions[questionIndex];
+      } else {
+        // Try to find by _id string match
+        question = quiz.questions.find(q => q._id.toString() === answer.questionId);
+      }
+    }
+
     const isCorrect = question && question.correctAnswer === answer.selectedAnswer;
     if (isCorrect) score++;
+    
     return {
-      ...answer,
+      questionId: question ? question._id : answer.questionId,
+      selectedAnswer: answer.selectedAnswer,
       isCorrect,
     };
   });
@@ -298,7 +321,7 @@ const submitQuizAttempt = asyncHandler(async (req, res) => {
     answers: processedAnswers,
     score,
     totalQuestions: quiz.questions.length,
-    totalTimeTaken,
+    totalTimeTaken: finalTimeTaken,
   });
 
   // Update quiz stats
@@ -310,22 +333,57 @@ const submitQuizAttempt = asyncHandler(async (req, res) => {
   quiz.averageScore = Math.round(avgScore);
   await quiz.save();
 
-  // Update user's quizzes taken
-  await User.findByIdAndUpdate(req.user._id, {
-    $push: {
-      quizzesTaken: {
-        quiz: quiz._id,
-        score,
-        totalQuestions: quiz.questions.length,
-        completedAt: new Date(),
-        timeTaken: totalTimeTaken,
-      },
-    },
+  // ==================== GAMIFICATION ====================
+  const user = await User.findById(req.user._id);
+
+  // Track quiz in user's quizzesTaken
+  user.quizzesTaken.push({
+    quiz: quiz._id,
+    score,
+    totalQuestions: quiz.questions.length,
+    completedAt: new Date(),
+    timeTaken: finalTimeTaken,
   });
+
+  // Calculate percentage for gamification
+  const percentage = Math.round((score / quiz.questions.length) * 100);
+
+  // Award XP (+10 base, +20 if >=80%, +50 if 100%)
+  const xpEarned = user.awardQuizXp(percentage);
+
+  // Update aggregated stats (totalQuizzes, averageScore, highScoreCount)
+  user.updateQuizStats(percentage);
+
+  // Check and award badges (no duplicates)
+  const newBadges = user.checkAndAwardBadges(percentage);
+
+  // Save all gamification updates
+  await user.save();
+
+  // Build XP progress info for frontend
+  const xpProgress = user.getXpProgress();
 
   res.status(201).json({
     success: true,
-    data: attempt,
+    data: {
+      ...attempt.toObject(),
+      percentage,
+      gamification: {
+        xpEarned,
+        totalXp: user.xp,
+        level: user.level,
+        xpProgress,
+        newBadges: newBadges.map((b) => ({
+          badgeId: b.id,
+          name: b.name,
+          icon: b.icon,
+          description: b.description,
+        })),
+        totalQuizzes: user.totalQuizzes,
+        averageScore: user.averageScore,
+        badges: user.badges,
+      },
+    },
   });
 });
 

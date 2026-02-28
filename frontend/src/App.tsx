@@ -32,6 +32,7 @@ import QuizAttempt from "./pages/QuizAttempt";
 import StudentDashboard from "./pages/student/Dashboard";
 import StudentResults from "./pages/student/Results";
 import StudentBrowseQuizzes from "./pages/student/BrowseQuizzes";
+import StudentMyProfile from "./pages/student/MyProfile";
 import FacultyDashboard from "./pages/faculty/Dashboard";
 import FacultyQuizResults from "./pages/faculty/QuizResults";
 import FacultyMyQuizzes from "./pages/faculty/MyQuizzes";
@@ -134,6 +135,14 @@ const App = () => (
                   element={
                     <StudentRoute>
                       <StudentBrowseQuizzes />
+                    </StudentRoute>
+                  }
+                />
+                <Route
+                  path="/student/profile"
+                  element={
+                    <StudentRoute>
+                      <StudentMyProfile />
                     </StudentRoute>
                   }
                 />

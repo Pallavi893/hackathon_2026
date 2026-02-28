@@ -265,6 +265,28 @@ export const uploadApi = {
   },
 };
 
+// ==================== PROFILE API ====================
+export const profileApi = {
+  // Get current user's full profile with gamification
+  getMyProfile: () => api.get<ApiResponse>("/api/users/me"),
+
+  // Update profile (name, avatar, password)
+  updateMyProfile: (data: {
+    name?: string;
+    avatar?: string;
+    currentPassword?: string;
+    newPassword?: string;
+  }) => api.put<ApiResponse>("/api/users/me", data),
+
+  // Get gamification stats only
+  getMyGamification: () => api.get<ApiResponse>("/api/users/me/gamification"),
+};
+
+// ==================== LEADERBOARD API ====================
+export const leaderboardApi = {
+  getLeaderboard: () => api.get<ApiResponse>("/api/leaderboard"),
+};
+
 // ==================== GENERATE API ====================
 export const generateApi = {
   generateQuiz: (text: string, settings: unknown) =>

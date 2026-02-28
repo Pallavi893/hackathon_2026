@@ -49,6 +49,7 @@ const studentItems: NavItem[] = [
   { title: "Dashboard", url: "/student/dashboard", icon: LayoutDashboard },
   { title: "Browse Quizzes", url: "/student/quizzes", icon: Search },
   { title: "My Results", url: "/student/results", icon: Trophy },
+  { title: "My Profile", url: "/student/profile", icon: Users },
 ];
 
 // Faculty navigation items

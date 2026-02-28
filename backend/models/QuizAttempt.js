@@ -2,11 +2,11 @@ const mongoose = require("mongoose");
 
 const answerSchema = new mongoose.Schema({
   questionId: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: mongoose.Schema.Types.Mixed, // Accept both ObjectId and String for flexibility
     required: true,
   },
   selectedAnswer: {
-    type: String,
+    type: mongoose.Schema.Types.Mixed, // Accept String or Array for multi-select questions
     default: null,
   },
   isCorrect: {
@@ -47,7 +47,7 @@ const quizAttemptSchema = new mongoose.Schema(
     },
     totalTimeTaken: {
       type: Number, // in seconds
-      required: true,
+      default: 0,
     },
     status: {
       type: String,

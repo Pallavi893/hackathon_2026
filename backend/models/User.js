@@ -121,6 +121,64 @@ const userSchema = new mongoose.Schema(
         timeTaken: Number, // in seconds
       },
     ],
+    // ==================== GAMIFICATION FIELDS ====================
+    // XP System
+    xp: {
+      type: Number,
+      default: 0,
+    },
+    // Level: computed as Math.floor(xp / 100) + 1
+    level: {
+      type: Number,
+      default: 1,
+    },
+    // Badges earned by the student (simple string array + detailed array)
+    badges: [
+      {
+        badgeId: {
+          type: String,
+          required: true,
+        },
+        name: {
+          type: String,
+          required: true,
+        },
+        icon: {
+          type: String,
+          default: "🏆",
+        },
+        description: {
+          type: String,
+          default: "",
+        },
+        earnedAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
+    // Aggregated stats for quick access
+    totalQuizzes: {
+      type: Number,
+      default: 0,
+    },
+    averageScore: {
+      type: Number,
+      default: 0,
+    },
+    // Count of quizzes with score >= 80% (for "High Achiever" badge)
+    highScoreCount: {
+      type: Number,
+      default: 0,
+    },
+    // Track quiz streaks
+    streakCount: {
+      type: Number,
+      default: 0,
+    },
+    lastActiveDate: {
+      type: Date,
+    },
   },
   {
     timestamps: true,
@@ -219,6 +277,150 @@ userSchema.methods.matchPassword = async function (enteredPassword) {
 userSchema.methods.updateLastLogin = async function () {
   this.lastLoginAt = new Date();
   return this.save();
+};
+
+// ==================== GAMIFICATION METHODS ====================
+
+// Badge definitions
+const BADGES = {
+  QUIZ_MASTER: {
+    id: "quiz_master",
+    name: "Quiz Master",
+    icon: "🥇",
+    description: "Score 90% or higher on a quiz",
+  },
+  PERFECT_SCORE: {
+    id: "perfect_score",
+    name: "Perfect Score",
+    icon: "💯",
+    description: "Achieve 100% on a quiz",
+  },
+  CONSISTENT_LEARNER: {
+    id: "consistent_learner",
+    name: "Consistent Learner",
+    icon: "🔥",
+    description: "Complete 5 quizzes",
+  },
+  HIGH_ACHIEVER: {
+    id: "high_achiever",
+    name: "High Achiever",
+    icon: "🏆",
+    description: "Score 80% or higher on 3 quizzes",
+  },
+  FIRST_STEP: {
+    id: "first_step",
+    name: "First Step",
+    icon: "🎯",
+    description: "Complete your first quiz",
+  },
+};
+
+/**
+ * Calculate level from XP: level = Math.floor(xp / 100) + 1
+ */
+userSchema.methods.calculateLevel = function () {
+  return Math.floor(this.xp / 100) + 1;
+};
+
+/**
+ * Get XP progress info for frontend progress bar
+ */
+userSchema.methods.getXpProgress = function () {
+  const currentLevel = this.calculateLevel();
+  const xpForCurrentLevel = (currentLevel - 1) * 100;
+  const xpForNextLevel = currentLevel * 100;
+  const xpInCurrentLevel = this.xp - xpForCurrentLevel;
+  const xpNeeded = 100; // Always 100 XP per level
+  return {
+    currentXp: this.xp,
+    currentLevel,
+    xpInCurrentLevel,
+    xpNeededForNextLevel: xpNeeded,
+    progressPercent: Math.min(100, Math.round((xpInCurrentLevel / xpNeeded) * 100)),
+    xpToNextLevel: xpForNextLevel - this.xp,
+  };
+};
+
+/**
+ * Award XP for quiz completion and update level
+ * +10 XP per attempt
+ * +20 XP bonus if score >= 80%
+ * +50 XP bonus if score = 100%
+ */
+userSchema.methods.awardQuizXp = function (percentage) {
+  let xpEarned = 10; // Base XP for attempt
+  if (percentage >= 80) xpEarned += 20;
+  if (percentage === 100) xpEarned += 50;
+
+  this.xp += xpEarned;
+  this.level = this.calculateLevel();
+  return xpEarned;
+};
+
+/**
+ * Update aggregated quiz stats (totalQuizzes, averageScore, highScoreCount)
+ */
+userSchema.methods.updateQuizStats = function (percentage) {
+  const prevTotal = this.totalQuizzes || 0;
+  const prevAvg = this.averageScore || 0;
+  this.totalQuizzes = prevTotal + 1;
+  this.averageScore = Math.round(((prevAvg * prevTotal) + percentage) / this.totalQuizzes);
+  if (percentage >= 80) {
+    this.highScoreCount = (this.highScoreCount || 0) + 1;
+  }
+};
+
+/**
+ * Check and award badges. Returns array of newly awarded badges.
+ * No duplicate badges (checks hasBadge before adding).
+ */
+userSchema.methods.checkAndAwardBadges = function (percentage) {
+  const newBadges = [];
+
+  // First Step (1 quiz completed)
+  if (this.totalQuizzes === 1 && !this.hasBadge("first_step")) {
+    newBadges.push(BADGES.FIRST_STEP);
+  }
+
+  // Quiz Master (score >= 90%)
+  if (percentage >= 90 && !this.hasBadge("quiz_master")) {
+    newBadges.push(BADGES.QUIZ_MASTER);
+  }
+
+  // Perfect Score (score === 100%)
+  if (percentage === 100 && !this.hasBadge("perfect_score")) {
+    newBadges.push(BADGES.PERFECT_SCORE);
+  }
+
+  // Consistent Learner (5 quizzes)
+  if (this.totalQuizzes >= 5 && !this.hasBadge("consistent_learner")) {
+    newBadges.push(BADGES.CONSISTENT_LEARNER);
+  }
+
+  // High Achiever (3 quizzes with >= 80%)
+  if (this.highScoreCount >= 3 && !this.hasBadge("high_achiever")) {
+    newBadges.push(BADGES.HIGH_ACHIEVER);
+  }
+
+  // Persist new badges
+  newBadges.forEach((badge) => {
+    this.badges.push({
+      badgeId: badge.id,
+      name: badge.name,
+      icon: badge.icon,
+      description: badge.description,
+      earnedAt: new Date(),
+    });
+  });
+
+  return newBadges;
+};
+
+/**
+ * Check if user already has a specific badge
+ */
+userSchema.methods.hasBadge = function (badgeId) {
+  return this.badges.some((b) => b.badgeId === badgeId);
 };
 
 const User = mongoose.model("User", userSchema);

@@ -23,6 +23,8 @@ const {
   resultsRoutes,
   analyticsRoutes,
   adminRoutes,
+  leaderboardRoutes,
+  profileRoutes,
 } = require("./routes");
 
 // Middleware
@@ -99,6 +101,8 @@ app.use("/api/upload", uploadRoutes);
 app.use("/api/results", resultsRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/leaderboard", leaderboardRoutes);
+app.use("/api/users", profileRoutes);
 
 // Root endpoint
 app.get("/", (req, res) => {

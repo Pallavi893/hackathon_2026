@@ -5,6 +5,8 @@ const uploadRoutes = require("./uploadRoutes");
 const resultsRoutes = require("./resultsRoutes");
 const analyticsRoutes = require("./analyticsRoutes");
 const adminRoutes = require("./adminRoutes");
+const leaderboardRoutes = require("./leaderboardRoutes");
+const profileRoutes = require("./profileRoutes");
 
 module.exports = {
   authRoutes,
@@ -14,4 +16,6 @@ module.exports = {
   resultsRoutes,
   analyticsRoutes,
   adminRoutes,
+  leaderboardRoutes,
+  profileRoutes,
 };
