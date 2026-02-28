@@ -14,7 +14,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Clock, Calendar, Users, Trophy, TrendingDown, TrendingUp } from "lucide-react";
+import {
+  ArrowLeft,
+  Clock,
+  Calendar,
+  Users,
+  Trophy,
+  TrendingDown,
+  TrendingUp,
+  ChevronRight,
+  FileText,
+  BarChart3,
+} from "lucide-react";
 import { toast } from "sonner";
 
 interface QuizResult {
@@ -44,10 +55,131 @@ interface Quiz {
   _id: string;
   title: string;
   description?: string;
+  topic?: string;
+  difficulty?: string;
+  questionCount?: number;
+  isPublished?: boolean;
+  createdAt?: string;
 }
 
-const FacultyQuizResults = () => {
-  const { quizId } = useParams<{ quizId: string }>();
+// ─── Quiz List View (no quizId selected) ─────────────────────────────
+const QuizListView = () => {
+  const [quizzes, setQuizzes] = useState<Quiz[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchQuizzes = async () => {
+      try {
+        const res = await quizApi.getMyQuizzes({ limit: 50 });
+        setQuizzes((res.data.data as Quiz[]) || []);
+      } catch (error) {
+        console.error("Error fetching quizzes:", error);
+        toast.error("Failed to load quizzes");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchQuizzes();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="space-y-6 p-6">
+        <Skeleton className="h-8 w-64" />
+        <div className="space-y-3">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <Skeleton key={i} className="h-20" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6 p-6 animate-fade-in">
+      <div>
+        <h1 className="text-3xl font-bold flex items-center gap-2">
+          <BarChart3 className="h-7 w-7" />
+          Quiz Results
+        </h1>
+        <p className="text-muted-foreground">Select a quiz to view student results and statistics</p>
+      </div>
+
+      {quizzes.length > 0 ? (
+        <div className="space-y-3">
+          {quizzes.map((quiz) => (
+            <Link key={quiz._id} to={`/faculty/quiz-results/${quiz._id}`}>
+              <Card className="hover:bg-accent/50 transition-colors cursor-pointer group mb-3">
+                <CardContent className="flex items-center justify-between p-4">
+                  <div className="flex items-center gap-4 flex-1 min-w-0">
+                    <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                      <FileText className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="font-semibold truncate">{quiz.title}</h3>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        {quiz.topic && <span>{quiz.topic}</span>}
+                        {quiz.topic && quiz.difficulty && <span>•</span>}
+                        {quiz.difficulty && (
+                          <Badge
+                            variant="outline"
+                            className={`text-xs ${
+                              quiz.difficulty === "easy"
+                                ? "border-green-500 text-green-600"
+                                : quiz.difficulty === "hard"
+                                ? "border-red-500 text-red-600"
+                                : "border-yellow-500 text-yellow-600"
+                            }`}
+                          >
+                            {quiz.difficulty}
+                          </Badge>
+                        )}
+                        {quiz.questionCount != null && (
+                          <>
+                            <span>•</span>
+                            <span>{quiz.questionCount} questions</span>
+                          </>
+                        )}
+                        {quiz.createdAt && (
+                          <>
+                            <span>•</span>
+                            <span>{new Date(quiz.createdAt).toLocaleDateString()}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {quiz.isPublished ? (
+                      <Badge variant="default" className="text-xs">Published</Badge>
+                    ) : (
+                      <Badge variant="secondary" className="text-xs">Draft</Badge>
+                    )}
+                    <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          ))}
+        </div>
+      ) : (
+        <Card>
+          <CardContent className="text-center py-16">
+            <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-semibold">No quizzes yet</h3>
+            <p className="text-muted-foreground mb-4">Create a quiz first to see results here</p>
+            <Link to="/faculty/create-quiz">
+              <Button>Create Quiz</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+};
+
+// ─── Quiz Detail Results View (quizId selected) ──────────────────────
+const QuizDetailResults = ({ quizId }: { quizId: string }) => {
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [results, setResults] = useState<QuizResult[]>([]);
   const [statistics, setStatistics] = useState<Statistics | null>(null);
@@ -57,8 +189,6 @@ const FacultyQuizResults = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!quizId) return;
-
       try {
         const [quizRes, resultsRes] = await Promise.all([
           quizApi.getQuiz(quizId),
@@ -67,7 +197,7 @@ const FacultyQuizResults = () => {
 
         setQuiz(quizRes.data.data as Quiz);
         setResults(resultsRes.data.data as QuizResult[]);
-        setStatistics(resultsRes.data.statistics as Statistics ?? null);
+        setStatistics((resultsRes.data.statistics as Statistics) ?? null);
         setTotalPages(resultsRes.data.pagination?.pages || 1);
       } catch (error) {
         console.error("Error fetching quiz results:", error);
@@ -120,7 +250,7 @@ const FacultyQuizResults = () => {
     <div className="space-y-6 p-6 animate-fade-in">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Link to="/faculty/dashboard">
+        <Link to="/faculty/quiz-results">
           <Button variant="ghost" size="icon">
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -218,14 +348,14 @@ const FacultyQuizResults = () => {
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar className="h-8 w-8">
-                            <AvatarImage src={result.user.avatar} />
+                            <AvatarImage src={result.user?.avatar} />
                             <AvatarFallback>
-                              {result.user.name?.charAt(0).toUpperCase()}
+                              {result.user?.name?.charAt(0).toUpperCase() || "?"}
                             </AvatarFallback>
                           </Avatar>
                           <div>
-                            <p className="font-medium">{result.user.name}</p>
-                            <p className="text-sm text-muted-foreground">{result.user.email}</p>
+                            <p className="font-medium">{result.user?.name || "Unknown"}</p>
+                            <p className="text-sm text-muted-foreground">{result.user?.email}</p>
                           </div>
                         </div>
                       </TableCell>
@@ -237,7 +367,7 @@ const FacultyQuizResults = () => {
                       <TableCell>
                         <div className="flex items-center gap-1 text-muted-foreground">
                           <Clock className="h-3 w-3" />
-                          {formatTime(result.timeTaken)}
+                          {formatTime(result.timeTaken || 0)}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -292,6 +422,17 @@ const FacultyQuizResults = () => {
       </Card>
     </div>
   );
+};
+
+// ─── Main Component ──────────────────────────────────────────────────
+const FacultyQuizResults = () => {
+  const { quizId } = useParams<{ quizId: string }>();
+
+  if (!quizId) {
+    return <QuizListView />;
+  }
+
+  return <QuizDetailResults quizId={quizId} />;
 };
 
 export default FacultyQuizResults;
