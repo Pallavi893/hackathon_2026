@@ -25,9 +25,10 @@ interface Result {
     description?: string;
   };
   score: number;
+  percentage: number;
   totalQuestions: number;
   completedAt: string;
-  timeTaken: number;
+  totalTimeTaken: number;
 }
 
 interface Pagination {
@@ -87,9 +88,9 @@ const StudentResults = () => {
   const sortedResults = [...results].sort((a, b) => {
     switch (sortBy) {
       case "score-high":
-        return b.score - a.score;
+        return (b.percentage ?? b.score) - (a.percentage ?? a.score);
       case "score-low":
-        return a.score - b.score;
+        return (a.percentage ?? a.score) - (b.percentage ?? b.score);
       case "recent":
       default:
         return new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime();
@@ -170,14 +171,14 @@ const StudentResults = () => {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={getScoreBadgeVariant(result.score)}>
-                          {result.score}%
+                        <Badge variant={getScoreBadgeVariant(result.percentage ?? result.score)}>
+                          {result.percentage ?? result.score}%
                         </Badge>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1 text-muted-foreground">
                           <Clock className="h-3 w-3" />
-                          {formatTime(result.timeTaken)}
+                          {formatTime(result.totalTimeTaken || 0)}
                         </div>
                       </TableCell>
                       <TableCell>

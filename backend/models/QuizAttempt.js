@@ -19,6 +19,31 @@ const answerSchema = new mongoose.Schema({
   },
 });
 
+const securityViolationSchema = new mongoose.Schema({
+  type: {
+    type: String,
+    enum: [
+      "fullscreen_exit",
+      "tab_switch",
+      "window_blur",
+      "right_click",
+      "copy_attempt",
+      "screenshot_attempt",
+      "devtools_open",
+      "other",
+    ],
+    required: true,
+  },
+  timestamp: {
+    type: Date,
+    default: Date.now,
+  },
+  description: {
+    type: String,
+    default: "",
+  },
+});
+
 const quizAttemptSchema = new mongoose.Schema(
   {
     user: {
@@ -61,6 +86,25 @@ const quizAttemptSchema = new mongoose.Schema(
     completedAt: {
       type: Date,
       default: Date.now,
+    },
+    // Exam security tracking
+    securityViolations: [securityViolationSchema],
+    violationCount: {
+      type: Number,
+      default: 0,
+    },
+    fullscreenEnforced: {
+      type: Boolean,
+      default: false,
+    },
+    autoSubmitted: {
+      type: Boolean,
+      default: false,
+    },
+    autoSubmitReason: {
+      type: String,
+      enum: ["max_violations", "time_limit", null],
+      default: null,
     },
   },
   {

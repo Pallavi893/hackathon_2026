@@ -90,10 +90,10 @@ const getQuizResults = asyncHandler(async (req, res) => {
 
   // Calculate statistics
   const allAttempts = await QuizAttempt.find({ quiz: req.params.quizId });
-  const scores = allAttempts.map((a) => a.score);
-  const avgScore = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
-  const highestScore = scores.length > 0 ? Math.max(...scores) : 0;
-  const lowestScore = scores.length > 0 ? Math.min(...scores) : 0;
+  const percentages = allAttempts.map((a) => a.percentage);
+  const avgScore = percentages.length > 0 ? percentages.reduce((a, b) => a + b, 0) / percentages.length : 0;
+  const highestScore = percentages.length > 0 ? Math.max(...percentages) : 0;
+  const lowestScore = percentages.length > 0 ? Math.min(...percentages) : 0;
 
   res.json({
     success: true,
@@ -103,7 +103,7 @@ const getQuizResults = asyncHandler(async (req, res) => {
       averageScore: avgScore.toFixed(2),
       highestScore,
       lowestScore,
-      passRate: scores.filter((s) => s >= 60).length / scores.length * 100 || 0,
+      passRate: percentages.length > 0 ? percentages.filter((s) => s >= 60).length / percentages.length * 100 : 0,
     },
     pagination: {
       page: parseInt(page),

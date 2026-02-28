@@ -196,6 +196,10 @@ export const quizApi = {
   submitAttempt: (quizId: string, data: {
     answers: { questionId: string; selectedAnswer: string | string[] }[];
     timeTaken: number;
+    securityViolations?: { type: string; timestamp: string; description: string }[];
+    fullscreenEnforced?: boolean;
+    autoSubmitted?: boolean;
+    autoSubmitReason?: string | null;
   }) => api.post<ApiResponse>(`/api/quizzes/${quizId}/attempt`, data),
 
   // Get quiz attempts (faculty - for their quiz)

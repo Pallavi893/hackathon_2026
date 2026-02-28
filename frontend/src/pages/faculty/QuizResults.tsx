@@ -38,8 +38,9 @@ interface QuizResult {
   };
   score: number;
   totalQuestions: number;
+  percentage: number;
   completedAt: string;
-  timeTaken: number;
+  totalTimeTaken: number;
 }
 
 interface Statistics {
@@ -360,14 +361,14 @@ const QuizDetailResults = ({ quizId }: { quizId: string }) => {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={getScoreBadgeVariant(result.score)}>
-                          {result.score}%
+                        <Badge variant={getScoreBadgeVariant(result.percentage ?? result.score)}>
+                          {result.percentage ?? result.score}%
                         </Badge>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1 text-muted-foreground">
                           <Clock className="h-3 w-3" />
-                          {formatTime(result.timeTaken || 0)}
+                          {formatTime(result.totalTimeTaken || 0)}
                         </div>
                       </TableCell>
                       <TableCell>

@@ -25,6 +25,7 @@ import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
+  SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -104,6 +105,18 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
+      <SidebarHeader className="flex flex-row items-center gap-3 px-4 py-4">
+        <img
+          src="/logo.jpeg"
+          alt="PDF to Quiz"
+          className={collapsed ? "h-8 w-8 rounded-md object-cover" : "h-10 w-10 rounded-md object-cover"}
+        />
+        {!collapsed && (
+          <span className="text-base font-bold tracking-tight whitespace-nowrap">
+            PDF to Quiz
+          </span>
+        )}
+      </SidebarHeader>
       <SidebarContent>
         {/* Role-specific navigation */}
         {isAuthenticated && roleItems.length > 0 && (

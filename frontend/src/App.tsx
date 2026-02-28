@@ -40,10 +40,12 @@ import FacultyCreateQuiz from "./pages/faculty/CreateQuiz";
 import FacultyEditQuiz from "./pages/faculty/EditQuiz";
 import FacultyMyNotes from "./pages/faculty/MyNotes";
 import FacultyCreateEditNote from "./pages/faculty/CreateEditNote";
+import FacultyAttemptDetail from "./pages/faculty/AttemptDetail";
 import AdminDashboard from "./pages/admin/Dashboard";
 import AdminUsers from "./pages/admin/Users";
 import AdminPendingFaculty from "./pages/admin/PendingFaculty";
 import StudentBrowseNotes from "./pages/student/BrowseNotes";
+import StudentResultDetail from "./pages/student/ResultDetail";
 
 const queryClient = new QueryClient();
 
@@ -157,6 +159,14 @@ const App = () => (
                     </StudentRoute>
                   }
                 />
+                <Route
+                  path="/student/results/:attemptId"
+                  element={
+                    <StudentRoute>
+                      <StudentResultDetail />
+                    </StudentRoute>
+                  }
+                />
                 
                 {/* Faculty routes */}
                 <Route
@@ -228,6 +238,14 @@ const App = () => (
                   element={
                     <FacultyRoute>
                       <FacultyCreateEditNote />
+                    </FacultyRoute>
+                  }
+                />
+                <Route
+                  path="/faculty/results/:attemptId"
+                  element={
+                    <FacultyRoute>
+                      <FacultyAttemptDetail />
                     </FacultyRoute>
                   }
                 />

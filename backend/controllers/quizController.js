@@ -272,7 +272,7 @@ const updateQuestions = asyncHandler(async (req, res) => {
  * @access  Private
  */
 const submitQuizAttempt = asyncHandler(async (req, res) => {
-  const { answers, totalTimeTaken, timeTaken } = req.body;
+  const { answers, totalTimeTaken, timeTaken, securityViolations, fullscreenEnforced, autoSubmitted, autoSubmitReason } = req.body;
 
   // Validate required fields
   if (!answers || !Array.isArray(answers)) {
@@ -322,6 +322,12 @@ const submitQuizAttempt = asyncHandler(async (req, res) => {
     score,
     totalQuestions: quiz.questions.length,
     totalTimeTaken: finalTimeTaken,
+    // Exam security data
+    securityViolations: Array.isArray(securityViolations) ? securityViolations : [],
+    violationCount: Array.isArray(securityViolations) ? securityViolations.length : 0,
+    fullscreenEnforced: fullscreenEnforced || false,
+    autoSubmitted: autoSubmitted || false,
+    autoSubmitReason: autoSubmitReason || null,
   });
 
   // Update quiz stats
