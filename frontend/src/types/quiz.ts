@@ -5,6 +5,7 @@ export type ExamMode = "General" | "UPSC" | "JEE" | "College" | "School";
 
 export interface Question {
   id: string;
+  _id?: string;
   type: QuestionType;
   question: string;
   options?: string[];
@@ -25,6 +26,33 @@ export interface QuizSettings {
     medium: number;
     hard: number;
   };
+}
+
+export interface Quiz {
+  _id: string;
+  id?: string;
+  title: string;
+  description: string;
+  topic: string;
+  difficulty: "easy" | "medium" | "hard";
+  timeLimit: number;
+  isPublic: boolean;
+  isPublished: boolean;
+  questions: Question[];
+  questionCount?: number;
+  settings?: QuizSettings;
+  topics?: string[];
+  tags?: string[];
+  creator: {
+    _id: string;
+    name: string;
+    email: string;
+    avatar?: string;
+  };
+  timesPlayed: number;
+  averageScore: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export const defaultSettings: QuizSettings = {

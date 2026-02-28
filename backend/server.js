@@ -5,12 +5,25 @@ const helmet = require("helmet");
 const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
 const mongoSanitize = require("express-mongo-sanitize");
+const passport = require("passport");
+const session = require("express-session");
 
 // Database connection
 const connectDB = require("./config/db");
 
+// Passport configuration
+const configurePassport = require("./config/passport");
+
 // Routes
-const { authRoutes, quizRoutes, generateRoutes, uploadRoutes } = require("./routes");
+const { 
+  authRoutes, 
+  quizRoutes, 
+  generateRoutes, 
+  uploadRoutes,
+  resultsRoutes,
+  analyticsRoutes,
+  adminRoutes,
+} = require("./routes");
 
 // Middleware
 const { notFound, errorHandler, apiLimiter } = require("./middleware");
@@ -42,6 +55,25 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" })); // Parse URL-enc
 // Cookie parser
 app.use(cookieParser());
 
+// Session middleware (required for OAuth state)
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || process.env.JWT_SECRET || "your-session-secret",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === "production",
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    },
+  })
+);
+
+// Initialize Passport
+configurePassport();
+app.use(passport.initialize());
+app.use(passport.session());
+
 // Logging (development only)
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
@@ -64,6 +96,9 @@ app.use("/api/auth", authRoutes);
 app.use("/api/quizzes", quizRoutes);
 app.use("/api/generate", generateRoutes);
 app.use("/api/upload", uploadRoutes);
+app.use("/api/results", resultsRoutes);
+app.use("/api/analytics", analyticsRoutes);
+app.use("/api/admin", adminRoutes);
 
 // Root endpoint
 app.get("/", (req, res) => {

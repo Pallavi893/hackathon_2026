@@ -98,6 +98,24 @@ const quizSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    isPublished: {
+      type: Boolean,
+      default: false,
+    },
+    topic: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    difficulty: {
+      type: String,
+      enum: ["easy", "medium", "hard"],
+      default: "medium",
+    },
+    timeLimit: {
+      type: Number,
+      default: 30, // Default 30 minutes
+    },
     tags: {
       type: [String],
       default: [],

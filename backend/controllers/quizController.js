@@ -7,7 +7,7 @@ const { asyncHandler, ApiError } = require("../utils");
  * @access  Private
  */
 const createQuiz = asyncHandler(async (req, res) => {
-  const { title, description, sourceText, questions, settings, topics, isPublic, tags } = req.body;
+  const { title, description, sourceText, questions, settings, topics, topic, difficulty, timeLimit, isPublic, isPublished, tags } = req.body;
 
   const quiz = await Quiz.create({
     title,
@@ -17,7 +17,11 @@ const createQuiz = asyncHandler(async (req, res) => {
     questions,
     settings,
     topics,
+    topic,
+    difficulty,
+    timeLimit,
     isPublic,
+    isPublished,
     tags,
   });
 
@@ -38,16 +42,32 @@ const createQuiz = asyncHandler(async (req, res) => {
  * @access  Public/Private
  */
 const getQuizzes = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 10, search, tags, examMode } = req.query;
+  const { page = 1, limit = 10, search, tags, examMode, difficulty, topic, isPublic, isPublished } = req.query;
 
   const query = {};
 
-  // If user is logged in, show their quizzes and public ones
-  // If not logged in, show only public quizzes
+  // If user is logged in, show their quizzes and public/published ones
+  // If not logged in, show only public+published quizzes
   if (req.user) {
-    query.$or = [{ isPublic: true }, { creator: req.user._id }];
+    // For authenticated users: show published public quizzes OR their own quizzes
+    query.$or = [
+      { isPublic: true, isPublished: true },
+      { creator: req.user._id }
+    ];
   } else {
+    // For guests: only public and published quizzes
     query.isPublic = true;
+    query.isPublished = true;
+  }
+
+  // Additional filters - override the default query for specific filter requests
+  if (isPublic === 'true' || isPublic === 'false') {
+    // When explicitly filtering, remove the $or and use direct filters
+    delete query.$or;
+    query.isPublic = isPublic === 'true';
+    if (isPublished !== undefined) {
+      query.isPublished = isPublished === 'true';
+    }
   }
 
   // Search filter
@@ -63,6 +83,16 @@ const getQuizzes = asyncHandler(async (req, res) => {
   // Exam mode filter
   if (examMode) {
     query["settings.examMode"] = examMode;
+  }
+
+  // Difficulty filter
+  if (difficulty) {
+    query.difficulty = difficulty;
+  }
+
+  // Topic filter
+  if (topic) {
+    query.topic = { $regex: topic, $options: "i" };
   }
 
   const quizzes = await Quiz.find(query)
@@ -157,11 +187,11 @@ const updateQuiz = asyncHandler(async (req, res) => {
     throw new ApiError("Not authorized to update this quiz", 403);
   }
 
-  const { title, description, questions, settings, topics, isPublic, tags } = req.body;
+  const { title, description, questions, settings, topics, topic, difficulty, timeLimit, isPublic, isPublished, tags } = req.body;
 
   quiz = await Quiz.findByIdAndUpdate(
     req.params.id,
-    { title, description, questions, settings, topics, isPublic, tags },
+    { title, description, questions, settings, topics, topic, difficulty, timeLimit, isPublic, isPublished, tags },
     { new: true, runValidators: true }
   );
 
