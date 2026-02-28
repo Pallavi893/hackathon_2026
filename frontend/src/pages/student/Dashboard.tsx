@@ -82,16 +82,16 @@ const StudentDashboard = () => {
     const fetchDashboardData = async () => {
       try {
         const [analyticsRes, quizzesRes, resultsRes, weakTopicsRes] = await Promise.all([
-          analyticsApi.getMyAnalytics(),
-          quizApi.getQuizzes({ limit: 6, isPublic: true, isPublished: true }),
-          resultsApi.getMyResults({ limit: 5 }),
-          analyticsApi.getWeakTopics(),
+          analyticsApi.getMyAnalytics().catch(() => ({ data: { data: null } })),
+          quizApi.getQuizzes({ limit: 6, isPublic: true, isPublished: true }).catch(() => ({ data: { data: [] } })),
+          resultsApi.getMyResults({ limit: 5 }).catch(() => ({ data: { data: [] } })),
+          analyticsApi.getWeakTopics().catch(() => ({ data: { data: [] } })),
         ]);
 
-        setAnalytics(analyticsRes.data.data as AnalyticsData);
-        setQuizzes(quizzesRes.data.data as Quiz[]);
-        setRecentResults(resultsRes.data.data as Result[]);
-        setWeakTopics(weakTopicsRes.data.data as WeakTopic[]);
+        setAnalytics(analyticsRes.data?.data as AnalyticsData || null);
+        setQuizzes((quizzesRes.data?.data as Quiz[]) || []);
+        setRecentResults((resultsRes.data?.data as Result[]) || []);
+        setWeakTopics((weakTopicsRes.data?.data as WeakTopic[]) || []);
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
         toast.error("Failed to load dashboard data");
@@ -203,7 +203,7 @@ const StudentDashboard = () => {
           <CardContent>
             <ScrollArea className="h-[300px]">
               <div className="space-y-3">
-                {quizzes.length > 0 ? (
+                {quizzes && quizzes.length > 0 ? (
                   quizzes.map((quiz) => (
                     <div
                       key={quiz._id}
@@ -275,7 +275,7 @@ const StudentDashboard = () => {
           <CardContent>
             <ScrollArea className="h-[300px]">
               <div className="space-y-3">
-                {recentResults.length > 0 ? (
+                {recentResults && recentResults.length > 0 ? (
                   recentResults.map((result) => (
                     <div
                       key={result._id}
@@ -315,7 +315,7 @@ const StudentDashboard = () => {
       </div>
 
       {/* Weak Topics */}
-      {weakTopics.length > 0 && (
+      {weakTopics && weakTopics.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
