@@ -120,6 +120,10 @@ const quizSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
+    questionCount: {
+      type: Number,
+      default: 0,
+    },
     timesPlayed: {
       type: Number,
       default: 0,
@@ -134,13 +138,16 @@ const quizSchema = new mongoose.Schema(
   }
 );
 
+// Pre-save hook to update questionCount
+quizSchema.pre("save", function (next) {
+  if (this.questions) {
+    this.questionCount = this.questions.length;
+  }
+  next();
+});
+
 // Index for search functionality
 quizSchema.index({ title: "text", description: "text", tags: "text" });
-
-// Virtual for question count
-quizSchema.virtual("questionCount").get(function () {
-  return this.questions.length;
-});
 
 // Ensure virtuals are included in JSON
 quizSchema.set("toJSON", { virtuals: true });
