@@ -46,27 +46,32 @@ const getQuizzes = asyncHandler(async (req, res) => {
 
   const query = {};
 
-  // If user is logged in, show their quizzes and public/published ones
-  // If not logged in, show only public+published quizzes
-  if (req.user) {
-    // For authenticated users: show published public quizzes OR their own quizzes
-    query.$or = [
-      { isPublic: true, isPublished: true },
-      { creator: req.user._id }
-    ];
-  } else {
-    // For guests: only public and published quizzes
-    query.isPublic = true;
-    query.isPublished = true;
-  }
-
-  // Additional filters - override the default query for specific filter requests
-  if (isPublic === 'true' || isPublic === 'false') {
-    // When explicitly filtering, remove the $or and use direct filters
-    delete query.$or;
-    query.isPublic = isPublic === 'true';
-    if (isPublished !== undefined) {
+  // Handle explicit isPublic and isPublished filters (takes priority)
+  const hasPublicFilter = isPublic === 'true' || isPublic === 'false';
+  const hasPublishedFilter = isPublished === 'true' || isPublished === 'false';
+  
+  console.log('[getQuizzes] Filters:', { isPublic, isPublished, hasPublicFilter, hasPublishedFilter });
+  
+  if (hasPublicFilter || hasPublishedFilter) {
+    // Explicit filter mode - use direct filters
+    if (hasPublicFilter) {
+      query.isPublic = isPublic === 'true';
+    }
+    if (hasPublishedFilter) {
       query.isPublished = isPublished === 'true';
+    }
+  } else {
+    // Default mode - based on authentication
+    if (req.user) {
+      // For authenticated users: show published public quizzes OR their own quizzes
+      query.$or = [
+        { isPublic: true, isPublished: true },
+        { creator: req.user._id }
+      ];
+    } else {
+      // For guests: only public and published quizzes
+      query.isPublic = true;
+      query.isPublished = true;
     }
   }
 
@@ -94,6 +99,8 @@ const getQuizzes = asyncHandler(async (req, res) => {
   if (topic) {
     query.topic = { $regex: topic, $options: "i" };
   }
+
+  console.log('[getQuizzes] Final query:', JSON.stringify(query));
 
   const quizzes = await Quiz.find(query)
     .populate("creator", "name email avatar")
