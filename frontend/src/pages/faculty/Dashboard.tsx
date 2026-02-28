@@ -41,7 +41,11 @@ interface Quiz {
   _id: string;
   title: string;
   description?: string;
+  topic?: string;
+  difficulty?: string;
+  timeLimit?: number;
   isPublic: boolean;
+  isPublished: boolean;
   questions: unknown[];
   createdAt: string;
   settings?: { examMode?: string };
@@ -192,6 +196,50 @@ const FacultyDashboard = () => {
         </Card>
       </div>
 
+      {/* Ongoing Quizzes - Published quizzes visible to students */}
+      {quizzes.some(q => q.isPublished) && (
+        <Card className="border-green-200 bg-green-50/30 dark:bg-green-950/10">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-green-700 dark:text-green-400">
+              <BookOpen className="h-5 w-5" />
+              Ongoing Quizzes
+            </CardTitle>
+            <CardDescription>Published quizzes currently available to students</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {quizzes.filter(q => q.isPublished).map((quiz) => (
+                <div key={quiz._id} className="p-4 border rounded-lg bg-white dark:bg-card hover:shadow-md transition-shadow">
+                  <div className="flex items-center justify-between mb-2">
+                    <Badge variant="default" className="bg-green-600">Live</Badge>
+                    <Badge variant={quiz.isPublic ? "outline" : "secondary"}>
+                      {quiz.isPublic ? "Public" : "Private"}
+                    </Badge>
+                  </div>
+                  <h4 className="font-medium truncate mb-2">{quiz.title}</h4>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    {quiz.questions?.length || 0} questions
+                    {quiz.timeLimit && ` • ${quiz.timeLimit} min`}
+                  </p>
+                  <div className="flex gap-2">
+                    <Link to={`/quiz/${quiz._id}`} className="flex-1">
+                      <Button variant="outline" size="sm" className="w-full">
+                        <Eye className="h-4 w-4 mr-1" /> Preview
+                      </Button>
+                    </Link>
+                    <Link to={`/faculty/edit-quiz/${quiz._id}`}>
+                      <Button variant="outline" size="sm">
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Main Content Grid */}
       <div className="grid gap-6 md:grid-cols-2">
         {/* My Quizzes */}
@@ -244,7 +292,7 @@ const FacultyDashboard = () => {
                             View Results
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            onClick={() => navigate(`/faculty/quiz/${quiz._id}/edit`)}
+                            onClick={() => navigate(`/faculty/edit-quiz/${quiz._id}`)}
                           >
                             <Edit className="mr-2 h-4 w-4" />
                             Edit

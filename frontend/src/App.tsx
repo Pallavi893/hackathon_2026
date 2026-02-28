@@ -36,6 +36,7 @@ import FacultyDashboard from "./pages/faculty/Dashboard";
 import FacultyQuizResults from "./pages/faculty/QuizResults";
 import FacultyMyQuizzes from "./pages/faculty/MyQuizzes";
 import FacultyCreateQuiz from "./pages/faculty/CreateQuiz";
+import FacultyEditQuiz from "./pages/faculty/EditQuiz";
 import AdminDashboard from "./pages/admin/Dashboard";
 import AdminUsers from "./pages/admin/Users";
 import AdminPendingFaculty from "./pages/admin/PendingFaculty";
@@ -175,6 +176,14 @@ const App = () => (
                   element={
                     <FacultyRoute>
                       <FacultyCreateQuiz />
+                    </FacultyRoute>
+                  }
+                />
+                <Route
+                  path="/faculty/edit-quiz/:quizId"
+                  element={
+                    <FacultyRoute>
+                      <FacultyEditQuiz />
                     </FacultyRoute>
                   }
                 />
