@@ -65,9 +65,15 @@ const adminItems: NavItem[] = [
   { title: "Manage Users", url: "/admin/users", icon: Users },
 ];
 
-// Quiz creation tools - Only for faculty/admin
-const quizCreationItems: NavItem[] = [
-  { title: "Create Quiz", url: "/faculty/create-quiz", icon: Upload },
+// Admin-only tools (Upload Notes)
+const adminToolItems: NavItem[] = [
+  { title: "Upload Notes", url: "/", icon: Upload },
+  { title: "Preview & Edit", url: "/preview", icon: Eye },
+];
+
+// Faculty quiz creation tools
+const facultyQuizItems: NavItem[] = [
+  { title: "Create Quiz", url: "/faculty/create-quiz", icon: PlusCircle },
   { title: "Preview & Edit", url: "/preview", icon: Eye },
 ];
 
@@ -124,13 +130,39 @@ export function AppSidebar() {
           </SidebarGroup>
         )}
 
-        {/* Quiz Tools - Only for faculty and admin */}
-        {isAuthenticated && (isFaculty() || isAdmin()) && (
+        {/* Admin Tools - Upload Notes (Admin only) */}
+        {isAuthenticated && isAdmin() && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Admin Tools</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {adminToolItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <NavLink
+                        to={item.url}
+                        end={item.url === "/"}
+                        className="hover:bg-accent"
+                        activeClassName="bg-accent text-accent-foreground font-medium"
+                      >
+                        <item.icon className="mr-2 h-4 w-4" />
+                        {!collapsed && <span>{item.title}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {/* Quiz Tools - Faculty only */}
+        {isAuthenticated && isFaculty() && (
           <SidebarGroup>
             <SidebarGroupLabel>Quiz Tools</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {quizCreationItems.map((item) => (
+                {facultyQuizItems.map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild>
                       <NavLink
